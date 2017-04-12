@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Soundcloud Waveform</title>
+  <script type="text/javascript" src="Http.js"></script>
+  <script type="text/javascript" src="Waveform.js"></script>
+  
+  <style type="text/css">
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: #242424;
+    }
+    
+    body * {
+      box-sizing: border-box;
+    }
+    
+    .waveform {
+      vertical-align: middle;
+      height: 100px;
+      margin: 0 10px;
+      width: calc(100% - 20px);
+      opacity: .8;
+      transition: ease-in-out opacity 200ms;
+      
+      position: absolute;
+      bottom: 50px;
+    }
+    
+    .waveform:hover {
+      opacity: 1;
+    }
+    
+    .cover {
+      position: relative;
+      max-width: 650px;
+      margin: 0 auto;
+    }
+    
+    .cover img {
+      width: 100%;
+    }
+    
+    .cover input {
+      position: absolute;
+      bottom: 0;
+      width: calc(100% - 70px);
+      font-size: 20px;
+    }
+    
+    .cover button {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      font-size: 20px;
+      width: 70px;
+    }
+    
+    .cover .play {
+      position: absolute;
+      bottom: 160px;
+      left: 10px;
+      font-size: 20px;
+      background: #f50 url(https://a-v2.sndcdn.com/assets/images/buttons/hero/play-69601b9.svg) no-repeat center center;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border-color: #f50;
+      cursor: pointer;
+    }
+    
+    .cover .play:hover {
+      background-color: #f30;
+      border-color: #f30;
+    }
+  </style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="track">
+    <input type="text" placeholder="track url">
+    <button>Load</button>
+  </div>
+  <div class="waveform"></div>
+  <img alt="Track Cover">
+  <div class="play"></div>
+</div>
+
+<script type="text/javascript">
+
+  (async function ()
+  {
+    const CLIENT_ID = "2t9loNQH90kzJcsFCODdigxfp325aq4z";
+
+    const input = document.querySelector(".track input");
+
+    const cover = document.querySelector(".cover img");
+
+    const load = document.querySelector(".cover button");
+
+    const container = document.querySelector(".waveform");
+
+    let waveform = null;
+    
+    const audio = new Audio();
+    
+    const play = document.querySelector(".play");
+
+    audio.volume = 0.5;
+    
+    audio.addEventListener("timeupdate", event =>
+    {
+      if (waveform)
+      {
+        waveform.setPlayback(audio.currentTime / (audio.duration / 100));
+      }
+    });
+
+    container.addEventListener("mousedown", event =>
+    {
+      if (event.button === 0 && audio.duration)
+      {
+        let x = event.layerX;
+        audio.currentTime = parseInt(parseInt(audio.duration) / 100 * (x / (container.clientWidth / 100)));
+        audio.play();
+      }
+    });
+    
+    play.addEventListener("click", event =>
+    {
+      if (event.button === 0)
+      {
+        if (audio.paused)
+        {
+          audio.play();
+        }
+        else
+        {
+          audio.pause();
+        }
+      }
+    });
+    
+    load.addEventListener("click", event =>
+    {
+      update();
+    });
+
+    input.value = "https://soundcloud.com/lostyears/lost-years-converter-v1";
+
+    async function resolve(url)
+    {
+      url = "https://api.soundcloud.com/resolve?url=" + url + "&client_id=" + CLIENT_ID;
+      return await getJSON(url);
+    }
+
+    function update()
+    {
+      (async () =>
+      {
+        let track = await resolve(input.value);
+        let data = await getJSON(track.waveform_url.replace(/png/, "json"));
+
+        cover.src = track.artwork_url.replace(/large/, "t500x500");
+        
+        audio.pause();
+        
+        audio.src = track.stream_url + "?&client_id=" + CLIENT_ID;
+
+        if (!waveform)
+        {
+          waveform = new Waveform(container, data.samples, {
+            lineWidth: 3,
+            lineHeight: 3,
+            color: {
+              background: "#8C8C8C",
+              footer: "#B2B2B2",
+              footerPlayback: "#FFAA80",
+              hoverGradient: {
+                from: "#FF7200",
+                to: "#DA4218"
+              },
+              playbackGradient: {
+                from: "#FF7200",
+                to: "#DA4218"
+              },
+              hoverPlaybackGradient: {
+                from: "#AB5D20",
+                to: "#A84024"
+              }
+            }
+          });
+        }
+        else
+        {
+          waveform.update(data.samples);
+        }
+
+      })();
+    }
+
+    update();
+
+  })();
+
+
+</script>
+</body>
+</html>
