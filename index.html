@@ -86,7 +86,7 @@
     <button>Load</button>
   </div>
   <div class="waveform"></div>
-  <img alt="Track Cover">
+  <img src="" alt="Track Cover">
   <div class="play"></div>
 </div>
 
@@ -111,24 +111,16 @@
     const play = document.querySelector(".play");
 
     audio.volume = 0.5;
-    
-    audio.addEventListener("timeupdate", event =>
-    {
-      if (waveform)
-      {
-        waveform.setPlayback(audio.currentTime / (audio.duration / 100));
-      }
-    });
 
-    container.addEventListener("mousedown", event =>
-    {
-      if (event.button === 0 && audio.duration)
-      {
-        let x = event.layerX;
-        audio.currentTime = parseInt(parseInt(audio.duration) / 100 * (x / (container.clientWidth / 100)));
-        audio.play();
-      }
-    });
+//    container.addEventListener("mousedown", event =>
+//    {
+//      if (event.button === 0 && audio.duration)
+//      {
+//        let x = event.layerX;
+//        audio.currentTime = parseInt(parseInt(audio.duration) / 100 * (x / (container.clientWidth / 100)));
+//        audio.play();
+//      }
+//    });
     
     play.addEventListener("click", event =>
     {
@@ -145,7 +137,7 @@
       }
     });
     
-    load.addEventListener("click", event =>
+    load.addEventListener("click", () =>
     {
       update();
     });
@@ -162,7 +154,16 @@
     {
       (async () =>
       {
+        /**
+         * @property track.artwork_url
+         * @property track.waveform_url
+         * @property track.stream_url
+         */
         let track = await resolve(input.value);
+
+        /**
+         * @property {Array} track.samples
+         */
         let data = await getJSON(track.waveform_url.replace(/png/, "json"));
 
         cover.src = track.artwork_url.replace(/large/, "t500x500");
@@ -173,9 +174,15 @@
 
         if (!waveform)
         {
-          waveform = new Waveform(container, data.samples, {
-            lineWidth: 3,
-            lineHeight: 3,
+          waveform = new Waveform({
+            container: container,
+            audio: audio,
+            data: data.samples,
+            peakWidth: 2,
+            peakSpace: 1,
+            responsive: true,
+            mouseOverEvents: true,
+            mouseClickEvents: true,
             color: {
               background: "#8C8C8C",
               footer: "#B2B2B2",
@@ -197,7 +204,7 @@
         }
         else
         {
-          waveform.update(data.samples);
+          waveform.updateWaveformData(data.samples);
         }
 
       })();
